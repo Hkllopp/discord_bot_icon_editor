@@ -17,7 +17,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="$", intents=intents)
 
-loop_task = None
 library_channel_id = None
 cron_task = None
 
@@ -39,8 +38,8 @@ async def get_image_urls_from_channel(channel_id):
     channel = bot.get_channel(channel_id)
     if channel is None:
         return image_urls
-
-    async for message in channel.history(limit=100):
+    # may be slow for large channels because it fetches all messages
+    async for message in channel.history(limit=None):
         for attachment in message.attachments:
             if attachment.filename.lower().endswith(
                 (".png", ".jpg", ".jpeg", ".gif")

@@ -42,7 +42,7 @@ async def get_image_urls_from_channel(channel_id):
     async for message in channel.history(limit=None):
         for attachment in message.attachments:
             if attachment.filename.lower().endswith(
-                (".png", ".jpg", ".jpeg", ".gif")
+                (".png", ".jpg", ".jpeg")
             ):
                 image_urls.append(attachment.url)
     return image_urls

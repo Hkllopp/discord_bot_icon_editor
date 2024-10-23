@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from datetime import datetime
 
 import aiocron
 import aiohttp
@@ -115,7 +116,24 @@ async def change_icon_now(ctx):
         return
 
     await change_icon(ctx.guild)
-    await ctx.send("Icon changed immediately!")
+
+    if ctx.interaction:
+        await ctx.interaction.response.send_message(
+            "Icon changed immediately!"
+        )
+    else:
+        await ctx.send("Icon changed immediately!")
+
+
+@bot.hybrid_command()
+async def next_icon_change(ctx):
+    global cron_task
+    if cron_task is None:
+        await ctx.send("Icon change loop is not running!")
+        return
+
+    next_time = cron_task.next(datetime.now())
+    await ctx.send(f"Next icon change is scheduled for: {next_time}")
 
 
 bot.run(BOT_TOKEN)

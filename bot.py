@@ -132,7 +132,7 @@ async def next_icon_change(ctx):
         await ctx.send("Icon change loop is not running!")
         return
 
-    next_time = cron_task.next(datetime.now())
+    next_time = await cron_task.next(datetime.now())
     await ctx.send(f"Next icon change is scheduled for: {next_time}")
 
 

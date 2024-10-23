@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if BOT_TOKEN is None:
+    print("BOT_TOKEN is not set in the environment variables!")
+    exit(1)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -41,9 +44,7 @@ async def get_image_urls_from_channel(channel_id):
     # may be slow for large channels because it fetches all messages
     async for message in channel.history(limit=None):
         for attachment in message.attachments:
-            if attachment.filename.lower().endswith(
-                (".png", ".jpg", ".jpeg")
-            ):
+            if attachment.filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 image_urls.append(attachment.url)
     return image_urls
 
@@ -64,7 +65,6 @@ async def change_icon(guild):
                         await library_channel.send(
                             f"Icon changed to {rand_image_url} at {timestamp}"
                         )
-
         else:
             print("No images found in library channel!")
 
@@ -106,6 +106,16 @@ async def stop(ctx):
         await ctx.send("Icon change loop stopped!")
     else:
         await ctx.send("No icon change loop is running!")
+
+
+@bot.hybrid_command()
+async def change_icon_now(ctx):
+    if library_channel_id is None:
+        await ctx.send("Library channel is not set!")
+        return
+
+    await change_icon(ctx.guild)
+    await ctx.send("Icon changed immediately!")
 
 
 bot.run(BOT_TOKEN)

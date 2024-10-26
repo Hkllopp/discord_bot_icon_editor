@@ -23,18 +23,10 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="$", intents=intents)
 
 
-def localTzname():
-    if time.daylight:
-        offsetHour = time.altzone / 3600
-    else:
-        offsetHour = time.timezone / 3600
-    return "Etc/GMT%+d" % offsetHour
-
-
 log_channel_id = None
 library_channel_id = None
 cron_task = None
-timezone = pytz.timezone(localTzname())
+loop_timezone = None
 
 
 @bot.event
@@ -107,7 +99,7 @@ async def set_log_channel(ctx, channel_id: str):
 
 
 @bot.hybrid_command()
-async def start(ctx, cron_syntax: str):
+async def start(ctx, cron_syntax: str, timezone: str = None):
     global cron_task
     if library_channel_id is None:
         await ctx.send("Library channel is not set!")
@@ -117,14 +109,20 @@ async def start(ctx, cron_syntax: str):
         await ctx.send("Log channel is not set!")
         return
 
-    global timezone
+    # if user has not provided a timezone, use the default timezone
+    global loop_timezone
+    if timezone is None:
+        loop_timezone = timezone
+    else:
+        loop_timezone = pytz.timezone(timezone)
+
     if cron_task is None:
         cron_task = aiocron.crontab(
-            cron_syntax, func=change_icon, args=(ctx.guild,), tz=timezone
+            cron_syntax, func=change_icon, args=(ctx.guild,), tz=loop_timezone
         )
         await ctx.send(
             f"Icon change loop started with cron syntax: `{cron_syntax}` and"
-            f" timezone: {timezone}"
+            f" timezone: {loop_timezone}"
         )
     else:
         await ctx.send("Icon change loop is already running!")

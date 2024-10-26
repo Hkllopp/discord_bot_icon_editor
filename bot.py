@@ -6,6 +6,7 @@ from datetime import datetime
 import aiocron
 import aiohttp
 import discord
+import pytz
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -24,6 +25,15 @@ bot = commands.Bot(command_prefix="$", intents=intents)
 log_channel_id = None
 library_channel_id = None
 cron_task = None
+timezone = pytz.timezone(localTzname())
+
+
+def localTzname():
+    if time.daylight:
+        offsetHour = time.altzone / 3600
+    else:
+        offsetHour = time.timezone / 3600
+    return "Etc/GMT%+d" % offsetHour
 
 
 @bot.event
@@ -55,7 +65,10 @@ async def change_icon(guild):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print(f"{timestamp} Changing icon for {guild.name}...")
     if log_channel_id is None:
-        print(f"{timestamp} Error when executing function change_icon : log_channel not defined")
+        print(
+            f"{timestamp} Error when executing function change_icon :"
+            " log_channel not defined"
+        )
         return
 
     if library_channel_id is not None:
@@ -74,6 +87,7 @@ async def change_icon(guild):
         else:
             print(f"{timestamp} No images found in library channel!")
 
+
 @bot.hybrid_command()
 async def set_library_channel(ctx, channel_id: str):
     global library_channel_id
@@ -83,13 +97,13 @@ async def set_library_channel(ctx, channel_id: str):
         f"Library channel set to {channel_id}, found {len(images)} images."
     )
 
+
 @bot.hybrid_command()
 async def set_log_channel(ctx, channel_id: str):
     global log_channel_id
     log_channel_id = int(channel_id)
-    await ctx.send(
-        f"Log channel set to {channel_id}."
-    )
+    await ctx.send(f"Log channel set to {channel_id}.")
+
 
 @bot.hybrid_command()
 async def start(ctx, cron_syntax: str):
@@ -102,12 +116,14 @@ async def start(ctx, cron_syntax: str):
         await ctx.send("Log channel is not set!")
         return
 
+    global timezone
     if cron_task is None:
         cron_task = aiocron.crontab(
-            cron_syntax, func=change_icon, args=(ctx.guild,)
+            cron_syntax, func=change_icon, args=(ctx.guild,), tz=timezone
         )
         await ctx.send(
-            f"Icon change loop started with cron syntax: {cron_syntax}"
+            f"Icon change loop started with cron syntax: `{cron_syntax}` and"
+            f" timezone: {timezone}"
         )
     else:
         await ctx.send("Icon change loop is already running!")
@@ -136,11 +152,14 @@ async def change_icon_now(ctx):
 
     await change_icon(ctx.guild)
 
-    if ctx.interaction:
-        await ctx.interaction.response.send_message(
-            "Icon changed immediately!"
-        )
-    else:
+    try:
+        if ctx.interaction and not ctx.interaction.response.is_done():
+            await ctx.interaction.response.send_message(
+                "Icon changed immediately!"
+            )
+        else:
+            await ctx.send("Icon changed immediately!")
+    except discord.errors.NotFound:
         await ctx.send("Icon changed immediately!")
 
 
@@ -151,7 +170,7 @@ async def next_icon_change(ctx):
         await ctx.send("Icon change loop is not running!")
         return
 
-    next_time = await cron_task.next(datetime.now())
+    next_time = await cron_task.next()
     await ctx.send(f"Next icon change is scheduled for: {next_time}")
 
 

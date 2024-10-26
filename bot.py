@@ -22,11 +22,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="$", intents=intents)
 
-log_channel_id = None
-library_channel_id = None
-cron_task = None
-timezone = pytz.timezone(localTzname())
-
 
 def localTzname():
     if time.daylight:
@@ -34,6 +29,12 @@ def localTzname():
     else:
         offsetHour = time.timezone / 3600
     return "Etc/GMT%+d" % offsetHour
+
+
+log_channel_id = None
+library_channel_id = None
+cron_task = None
+timezone = pytz.timezone(localTzname())
 
 
 @bot.event

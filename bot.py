@@ -22,6 +22,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="$", intents=intents)
 
+log_channel_id = None
 library_channel_id = None
 cron_task = None
 loop_timezone = None
@@ -55,6 +56,12 @@ async def get_image_urls_from_channel(channel_id):
 async def change_icon(guild):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print(f"{timestamp} Changing icon for {guild.name}...")
+    if log_channel_id is None:
+        print(
+            f"{timestamp} Error when executing function change_icon :"
+            " log_channel not defined"
+        )
+        return
     if library_channel_id is not None:
         image_urls = await get_image_urls_from_channel(library_channel_id)
         if image_urls:
@@ -64,12 +71,12 @@ async def change_icon(guild):
                     if resp.status == 200:
                         icon = await resp.read()
                         await guild.edit(icon=icon)
-                        library_channel = bot.get_channel(library_channel_id)
-                        await library_channel.send(
+                        log_channel = bot.get_channel(log_channel_id)
+                        await log_channel.send(
                             f"Icon changed to {rand_image_url} at {timestamp}"
                         )
         else:
-            print("No images found in library channel!")
+            print(f"{timestamp} No images found in library channel!")
 
 
 @bot.hybrid_command()
@@ -83,14 +90,25 @@ async def set_library_channel(ctx, channel_id: str):
 
 
 @bot.hybrid_command()
+async def set_log_channel(ctx, channel_id: str):
+    global log_channel_id
+    log_channel_id = int(channel_id)
+    await ctx.send(f"Log channel set to {channel_id}.")
+
+
+@bot.hybrid_command()
 async def start(ctx, cron_syntax: str, timezone: str = None):
     global cron_task, loop_timezone
     if library_channel_id is None:
         await ctx.send("Library channel is not set!")
         return
 
-    if timezone is None:
-        loop_timezone = None
+    if log_channel_id is None:
+        await ctx.send("Log channel is not set!")
+        return
+
+    if timezone is not None:
+        loop_timezone = timezone
     else:
         try:
             loop_timezone = pytz.timezone(timezone)
@@ -125,6 +143,10 @@ async def stop(ctx):
 async def change_icon_now(ctx):
     if library_channel_id is None:
         await ctx.send("Library channel is not set!")
+        return
+
+    if log_channel_id is None:
+        await ctx.send("Log channel is not set!")
         return
 
     await change_icon(ctx.guild)

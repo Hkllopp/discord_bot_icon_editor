@@ -107,25 +107,27 @@ async def start(ctx, cron_syntax: str, timezone: str = None):
         await ctx.send("Log channel is not set!")
         return
 
-    if timezone is not None:
-        loop_timezone = timezone
-    else:
-        try:
+    try:
+        # Convert the timezone string to a proper timezone object
+        if timezone is not None:
             loop_timezone = pytz.timezone(timezone)
-        except pytz.UnknownTimeZoneError:
-            await ctx.send(f"Unknown timezone: {timezone}")
-            return
-
-    if cron_task is None:
-        cron_task = aiocron.crontab(
-            cron_syntax, func=change_icon, args=(ctx.guild,), tz=loop_timezone
-        )
-        await ctx.send(
-            f"Icon change loop started with cron syntax: `{cron_syntax}` and"
-            f" timezone: {loop_timezone}"
-        )
-    else:
-        await ctx.send("Icon change loop is already running!")
+        else:
+            loop_timezone = pytz.UTC  # Default to UTC if no timezone specified
+            
+        if cron_task is None:
+            cron_task = aiocron.crontab(
+                cron_syntax, func=change_icon, args=(ctx.guild,), tz=loop_timezone
+            )
+            await ctx.send(
+                f"Icon change loop started with cron syntax: `{cron_syntax}` and"
+                f" timezone: {loop_timezone}"
+            )
+        else:
+            await ctx.send("Icon change loop is already running!")
+            
+    except pytz.exceptions.UnknownTimeZoneError:
+        await ctx.send(f"Unknown timezone: {timezone}")
+        return
 
 
 @bot.hybrid_command()

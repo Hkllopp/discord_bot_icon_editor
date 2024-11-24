@@ -6,27 +6,23 @@
 ```bash
 git clone https://github.com/Hkllopp/discord_bot_icon_editor
 ```
-2. Create a virtual environment
+2. Go in the directory
 ```bash
-python -m venv venv
+cd discord_bot_icon_editor
 ```
-3. Activate the virtual environment
+3. Run the script
 ```bash
-# Linux
-source venv/bin/activate
-# Windows
-venv\Scripts\activate
+. script.sh
 ```
-4. Install the requirements
-```bash
-pip install -r requirements.txt
-# If installation fails, you can try to install the requirements one by one using the light_requirements.txt file
+4. (If asked) Add your discord bot TOKEN in the .env file
+```bash and then rerun the script
+nano .env
+. script.sh
 ```
-5. Create a credentials file using .env.sample as a template (and use your own secrets). You can find a guid to create a discord bot [here](https://discordpy.readthedocs.io/en/stable/discord.html)
+
+## Specific azure installation
+
+We used systemctl to create a unit file to run the bot as a service. You can find the unit file in the `/etc/systemd/system/discord_bot_icon_editor.service`. You can see the status of the service with the following command:
 ```bash
-cp .env.sample .env
-```
-6. Run the bot
-```bash
-python bot.py
+systemctl status discord_bot_icon_editor
 ```
